@@ -3,11 +3,11 @@ import os
 import psycopg2
 
 conn = psycopg2.connect(
-    dbname="text_embeddings",
-    user="postgres",
-    password="jason",
-    host="localhost",
-    port=55432
+    dbname = "text_embeddings",
+    user = "postgres",
+    password = os.getenv("DB_PASSWORD"),
+    host = "localhost",
+    port = 55432
 )
 
 def load_jsonl_files(folder_path):
