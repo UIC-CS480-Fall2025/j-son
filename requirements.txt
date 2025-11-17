@@ -1,0 +1,5 @@
+psycopg2-binary==2.9.9
+sentence-transformers==2.2.2
+transformers==4.40.0
+torch==2.1.0
+numpy==1.26.2
