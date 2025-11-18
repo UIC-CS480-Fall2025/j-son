@@ -35,11 +35,17 @@ def search(query, k=5):
 
     return results
 
-results = search(input("Query: "), 5)
+query = input("Query: ")
 
-for r in results:
-    print("----")
-    print("URL:", r[1])
-    print("Chunk:", r[2])
-    print("Distance:", r[4])
-    print("Text:", r[3])
+while query:
+    results = search(query, 5)
+
+    for r in results:
+        print("----")
+        print("URL:", r[1])
+        print("Chunk:", r[2])
+        print("Distance:", r[4])
+        print("Text:", r[3])
+        
+    print()
+    query = input("Query: ")
