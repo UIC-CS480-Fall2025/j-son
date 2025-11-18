@@ -14,6 +14,7 @@ This data was sourced from <https://www.kaggle.com/datasets/jonathanluo101/fando
 3. Create a Docker container to set up a PostgreSQL server
     - `docker run -d --name <container_name> -e POSTGRES_PASSWORD=<postgres_password> -e POSTGRES_DB=text_embeddings -p 55432:5432 ankane/pgvector:latest`
     - Input your own container name, i.e. cs480-project, and postgres password
+    - Verify the container has been created with `docker ps`
 4. Start the newly created container and enter into psql via the container.
     - `docker start cs480-project` or the name you chose for the container
     - `docker exec -it cs480-project psql -U postgres -d text_embeddings`
@@ -32,7 +33,7 @@ This data was sourced from <https://www.kaggle.com/datasets/jonathanluo101/fando
     - Alongside with the code, this repository also includes a sample of the data inside of `archive/` for demoing purposes
 8. Install the necessary dependencies with `pip install -r requirements.txt`
 9. Inside of the repo directory, create a `.env` file to store your postgres password formatted as such:
-    `"DB_PASSWORD" = <password>`
+    `DB_PASSWORD = <password>`
 
 ## Running the Project
 
