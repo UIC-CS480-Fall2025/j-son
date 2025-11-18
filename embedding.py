@@ -22,7 +22,7 @@ BATCH_SIZE = 100
 
 with conn.cursor() as cur:
 
-    cur.execute("SELECT id, text FROM chunks WHERE embedding IS NULL")
+    cur.execute("SELECT id, text FROM chunks WHERE embedding IS NULL order by id")
     rows = cur.fetchall()
 
     for i in range(0, len(rows), BATCH_SIZE):
