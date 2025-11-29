@@ -34,23 +34,18 @@ with conn.cursor() as cur:
         ids = [r[0] for r in batch]
         texts = [r[1] for r in batch]
 
-        embedding_mini = models["mini"].encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True
-        )
+        embeddings = {
+        name: model.encode(
+                texts,
+                convert_to_numpy=True,
+                normalize_embeddings=True
+            )
+            for name, model in models.items()
+        }
 
-        embedding_qa = models["qa"].encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True
-        )
-
-        embedding_mpnet = models["mpnet"].encode(
-            texts,
-            convert_to_numpy=True,
-            normalize_embeddings=True
-        )
+        embedding_mini  = embeddings["mini"]
+        embedding_qa    = embeddings["qa"]
+        embedding_mpnet = embeddings["mpnet"]
 
         for idx, chunk_id in enumerate(ids):
             emb_mini = embedding_mini[idx].tolist()
@@ -58,7 +53,7 @@ with conn.cursor() as cur:
             emb_mpnet = embedding_mpnet[idx].tolist()
 
             cur.execute("""
-                UPDATE chunks
+                UPDATE Chunk_Embeddings
                 SET embedding_mini = %s,
                     embedding_qa = %s,
                     embedding_mpnet = %s

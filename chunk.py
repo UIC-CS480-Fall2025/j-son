@@ -69,7 +69,7 @@ if __name__ == "__main__":
     with conn.cursor() as cur:
         for c in chunked_dataset:
             cur.execute(
-                "INSERT INTO chunks (url, chunk_index, text) VALUES (%s, %s, %s)",
+                "INSERT INTO Chunk_Embeddings (url, chunk_index, text) VALUES (%s, %s, %s)",
                 (c["url"], c["chunk_index"], c["text"])
             )
 

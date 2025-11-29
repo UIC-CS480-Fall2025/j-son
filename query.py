@@ -48,7 +48,7 @@ def search(query, k=5):
                  0.5 * (embedding_qa   <=> %s::vector) +
                  0.3 * (embedding_mpnet  <=> %s::vector)
                 ) AS distance
-            FROM chunks
+            FROM Chunk_Embeddings
             ORDER BY distance
             LIMIT %s;
         """, 
