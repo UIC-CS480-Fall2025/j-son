@@ -58,17 +58,18 @@ def search(query, k=5):
 
     return results
 
-query = input("Query: ")
-
-while query:
-    results = search(query, 5)
-
-    for r in results:
-        print("----")
-        print("URL:", r[1])
-        print("Chunk:", r[2])
-        print("Distance:", r[4])
-        print("Text:", r[3])
-        
-    print()
+if __name__ == "__main__":
     query = input("Query: ")
+
+    while query:
+        results = search(query, 5)
+
+        for r in results:
+            print("----")
+            print("URL:", r[1])
+            print("Chunk:", r[2])
+            print("Distance:", r[4])
+            print("Text:", r[3])
+            
+        print()
+        query = input("Query: ")
