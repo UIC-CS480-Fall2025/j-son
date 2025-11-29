@@ -1,6 +1,8 @@
 import psycopg2
 from dotenv import load_dotenv
 import os
+import chunk
+import embedding
 
 load_dotenv()
 
@@ -149,12 +151,21 @@ def add_document(curator, document_name):
 
             file_type = os.path.splitext(document_name)[1].lower()
             if file_type == ".jsonl":
-                # parse and chunk json file like chunk.py
+                chunks = chunk.load_jsonl_file(document_name)
                 pass
             elif file_type == ".txt":
-                # chunk regular text file
+                chunks = chunk.load_txt_file(document_name)
                 pass
-
+            else:
+                print("Unsupported document type (jsonl, txt only). Please try again.")
+                return
+            
+            embeddings = embedding.create_embedding(chunks)
+            
+            cur.execute("""
+                INSERT INTO Document (Title, Doc_Type, Source, Added_By) 
+                VALUES (%s, %s, %s, %s);
+            """, [document_name, file_type[1:], ])
             return True
 
         except Exception as e:
