@@ -39,3 +39,16 @@ Create Table Retrieved_Docs (
     Foreign Key (Doc_ID) References Document(ID),
     Primary Key(User_ID, Query_Time, Doc_ID)
 );
+
+CREATE Table Chunk_Embeddings (
+    ID Serial Primary Key,
+    Document_ID Int Not NULL,
+    url Text NOT NULL,
+    Chunk_Index INTEGER NOT NULL,
+    text Text NOT NULL,
+    embedding_mini vector(384),
+    embedding_qa vector(384),
+    embedding_mpnet vector(768),
+
+    Foreign Key (Document_ID) References Document(ID)
+);
