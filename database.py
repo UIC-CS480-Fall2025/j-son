@@ -214,7 +214,45 @@ def edit_user(admin, new_info):
             conn.rollback()
             print("Something went wrong.\n" + str(e) + "\nPlease try again.")
             return False
+
+def delete_user(admin, target_user):
+
+    with conn.cursor() as cur:
+
+        try:
+            cur.execute("""
+                SELECT User_Role FROM Users WHERE ID = %s;
+            """, [admin])
+
+            role = cur.fetchone()
+
+            cur.execute("""
+                SELECT User_Name FROM Users WHERE ID = %s;
+            """, [target_user])
+
+            target_info = cur.fetchone()
+
+            if role[0] != "Admin":
+                print("You do not have permission to perform this action.")
+                return False
+            elif not target_info:
+                print("User not found.")
+                return False
+            
+            cur.execute("""
+                DELETE FROM Users WHERE ID = %s;
+            """, [target_user])
+
+            conn.commit()
+
+            print("User " + target_info[0] + " and all their related information deleted.")
+            return True
         
+        except Exception as e:
+            conn.rollback()
+            print("Something went wrong.\n" + str(e) + "\nPlease try again.")
+            return False
+
 def add_document(curator, document_name):
 
     with conn.cursor() as cur:
@@ -349,3 +387,5 @@ def remove_document(curator, target_doc):
             print("Something went wrong. Please try again.")
             return False
 
+def make_query(user, query):
+    pass
