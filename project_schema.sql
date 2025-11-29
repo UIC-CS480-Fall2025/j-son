@@ -1,8 +1,8 @@
 Create Table Users (
     ID Serial Not NULL Primary Key,
     User_Role varchar(10) Not NULL,
-    User_Name varchar(20) Not NULL,
-    Email varchar(30),
+    User_Name varchar(20) Unique Not NULL,
+    Email varchar(30) Unique Not NULL,
     User_Password varchar(15) Not NULL,
 
     Check(Email like '_%@_%._%'),
@@ -43,8 +43,6 @@ Create Table Retrieved_Docs (
 CREATE Table Chunk_Embeddings (
     ID Serial Primary Key,
     Document_ID Int Not NULL,
-    url Text NOT NULL,
-    Chunk_Index INTEGER NOT NULL,
     text Text NOT NULL,
     embedding_mini vector(384),
     embedding_qa vector(384),
