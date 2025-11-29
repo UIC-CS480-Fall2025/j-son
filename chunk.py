@@ -10,7 +10,7 @@ def load_single_jsonl(file_path):
                 if line:
                     yield json.loads(line)
     except FileNotFoundError:
-        print("File not found: " + file_path + "\nmake sure the file is in the same folder as the program.")
+        print("File not found: " + file_path + "\nMake sure the file path is correct.")
         return
     
 
@@ -31,7 +31,7 @@ def load_single_txt(file_path):
                 if line:
                     yield line
     except FileNotFoundError:
-        print("File not found: " + file_path + "\nmake sure the file is in the same folder as the program.")
+        print("File not found: " + file_path + "\nMake sure the file path is correct.")
         return
 
 def chunk_text(text, size=150, overlap=50):
