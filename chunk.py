@@ -8,10 +8,14 @@ def load_single_jsonl(file_path):
             for line in f:
                 line = line.strip()
                 if line:
-                    yield json.loads(line)
+                    text = json.loads(line).get("text")
+
+                    if text:
+                        yield text
+
     except FileNotFoundError:
         print("File not found: " + file_path + "\nMake sure the file path is correct.")
-        return
+        return ""
     
 
 def load_jsonl_files(folder_path):
@@ -32,7 +36,7 @@ def load_single_txt(file_path):
                     yield line
     except FileNotFoundError:
         print("File not found: " + file_path + "\nMake sure the file path is correct.")
-        return
+        return ""
 
 def chunk_text(text, size=150, overlap=50):
     
@@ -68,31 +72,29 @@ def chunk_dataset(folder_path, size=150, overlap=50):
 
 def chunk_jsonl_file(file_path, size=150, overlap=50):
 
-    all_chunks = []
-
-    for item in load_single_jsonl(file_path):
-        text = item.get("text", "")
+    for text in load_single_jsonl(file_path):
         if not text:
             continue
 
         local_chunks = chunk_text(text, size, overlap)
         for chunk in local_chunks:
             if chunk.strip():
-                all_chunks.append(chunk)
-
-    return all_chunks
+                yield chunk
 
 def chunk_txt_file(file_path, size=150, overlap=50):
-    all_chunks = []
 
-    for item in load_single_jsonl(file_path):
-        text = item.get("text", "")
+    buffer = []
+
+    for text in load_single_jsonl(file_path):
         if not text:
             continue
 
-        local_chunks = chunk_text(text, size, overlap)
-        for chunk in local_chunks:
-            if chunk.strip():
-                all_chunks.append(chunk)
+        words = text.split()
+        buffer.extend(words)
 
-    return all_chunks
+        while len(buffer) >= size:
+            yield " ".join(buffer[:size])
+            buffer = buffer[size - overlap:]
+
+    if buffer:
+        yield " ".join(buffer)
