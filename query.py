@@ -13,23 +13,46 @@ conn = psycopg2.connect(
     port = 55432
 )
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+models = {
+    "mini": SentenceTransformer("all-MiniLM-L6-v2"),
+    "qa": SentenceTransformer("multi-qa-MiniLM-L6-cos-v1"),
+    "mpnet" : SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
+}
 
 def search(query, k=5):
 
-    query_embedding = model.encode([query], convert_to_numpy=True)[0].tolist()
+    embedding_mini = models["mini"].encode(
+        [query],
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )[0].tolist()
+
+    embedding_qa = models["qa"].encode(
+        [query],
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )[0].tolist()
+
+    embedding_mpnet = models["mpnet"].encode(
+        [query],
+        convert_to_numpy=True,
+        normalize_embeddings=True
+    )[0].tolist()
 
     with conn.cursor() as cur:
 
         cur.execute("""
             SELECT 
                 id, url, chunk_index, text,
-                embedding <=> %s::vector AS distance
+                (0.2 * (embedding_mini <=> %s::vector) +
+                 0.5 * (embedding_qa   <=> %s::vector) +
+                 0.3 * (embedding_mpnet  <=> %s::vector)
+                ) AS distance
             FROM chunks
-            ORDER BY embedding <=> %s::vector
+            ORDER BY distance
             LIMIT %s;
         """, 
-        (query_embedding, query_embedding, k))
+        (embedding_mini, embedding_qa, embedding_mpnet, k))
 
         results = cur.fetchall()
 
