@@ -55,7 +55,6 @@ with conn.cursor() as cur:
         for idx, chunk_id in enumerate(ids):
             emb_mini = embedding_mini[idx].tolist()
             emb_qa = embedding_qa[idx].tolist()
-            emb_bge = embedding_bge[idx].tolist()
             emb_mpnet = embedding_mpnet[idx].tolist()
 
             cur.execute("""
