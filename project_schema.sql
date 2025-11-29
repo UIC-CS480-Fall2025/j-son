@@ -1,4 +1,4 @@
-Create Table Users (
+Create Table If Not Exists Users (
     ID Serial Not NULL Primary Key,
     User_Role varchar(10) Not NULL,
     User_Name varchar(20) Unique Not NULL,
@@ -9,11 +9,10 @@ Create Table Users (
     Check(User_Role in ('Admin', 'Curator', 'EndUser'))
 );
 
-Create Table Document (
+Create Table If Not Exists Document (
     ID Serial Not NULL Primary Key,
     Title varchar(80) Not NULL,
     Doc_Type varchar(20) Not NULL,
-    Source varchar(20) Not NULL,
     Added_Time Timestamp Default now() Not NULL,
     Processed Boolean Default False Not NULL, 
     Added_By Int Not NULL,
@@ -21,7 +20,7 @@ Create Table Document (
     Foreign Key (Added_By) References Users(ID)
 );
 
-Create Table QueryLog (
+Create Table If Not Exists QueryLog (
     User_ID Int Not NULL,
     Query_Time Timestamp Default Now() Not NULL,
     Query_Text Text Not NULL,
@@ -30,7 +29,7 @@ Create Table QueryLog (
     Primary Key(User_ID, Query_Time)
 );
 
-Create Table Retrieved_Docs (
+Create Table If Not Exists Retrieved_Docs (
     User_ID Int Not NULL,
     Query_Time Timestamp Not NULL,
     Doc_ID Int Not NULL,
@@ -40,7 +39,7 @@ Create Table Retrieved_Docs (
     Primary Key(User_ID, Query_Time, Doc_ID)
 );
 
-CREATE Table Chunk_Embeddings (
+Create Table If Not Exists Chunk_Embeddings (
     ID Serial Primary Key,
     Document_ID Int Not NULL,
     text Text NOT NULL,
