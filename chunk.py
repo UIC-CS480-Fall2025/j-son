@@ -39,7 +39,7 @@ def chunk_text(text, size=400, overlap=50):
 
     return chunks
 
-def chunk_dataset(folder_path, size=200, overlap=50):
+def chunk_dataset(folder_path, size=150, overlap=50):
     
     all_chunks = []
     for item in load_jsonl_files(folder_path):
@@ -73,5 +73,6 @@ if __name__ == "__main__":
                 (c["url"], c["chunk_index"], c["text"])
             )
 
+    print("All files in archive/ are processsed and stored.")
     conn.commit()
     conn.close()
