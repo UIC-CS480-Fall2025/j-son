@@ -3,11 +3,16 @@ import os
 
 def load_single_jsonl(file_path):
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                yield json.loads(line)
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    yield json.loads(line)
+    except FileNotFoundError:
+        print("File not found: " + file_path + "\nmake sure the file is in the same folder as the program.")
+        return
+    
 
 def load_jsonl_files(folder_path):
 
@@ -19,11 +24,15 @@ def load_jsonl_files(folder_path):
 
 def load_single_txt(file_path):
     
-    with open(file_path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line:
-                yield line
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    yield line
+    except FileNotFoundError:
+        print("File not found: " + file_path + "\nmake sure the file is in the same folder as the program.")
+        return
 
 def chunk_text(text, size=150, overlap=50):
     
