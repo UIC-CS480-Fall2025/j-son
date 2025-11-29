@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import os
 import chunk
 import embedding
+from itertools import chain
 
 load_dotenv()
 
@@ -20,7 +21,11 @@ def initialize_db():
 
         try:
             cur.execute("""
-                Create Table If Not Exists Users (
+                CREATE SCHEMA IF NOT EXISTS public;
+            """)
+
+            cur.execute("""
+                Create Table If Not Exists public.Users (
                     ID Serial Not NULL Primary Key,
                     User_Role varchar(10) Not NULL,
                     User_Name varchar(20) Unique Not NULL,
@@ -33,7 +38,7 @@ def initialize_db():
             """)
 
             cur.execute("""
-                Create Table If Not Exists Document (
+                Create Table If Not Exists public.Document (
                     ID Serial Not NULL Primary Key,
                     Title varchar(80) Not NULL,
                     Doc_Type varchar(20) Not NULL,
@@ -41,23 +46,23 @@ def initialize_db():
                     Processed Boolean Default False Not NULL, 
                     Added_By Int Not NULL,
 
-                    Foreign Key (Added_By) References Users(ID)
+                    Foreign Key (Added_By) References Users(ID) ON DELETE CASCADE
                 );
             """)
 
             cur.execute("""
-                Create Table If Not Exists QueryLog (
+                Create Table If Not Exists public.QueryLog (
                     User_ID Int Not NULL,
                     Query_Time Timestamp Default Now() Not NULL,
                     Query_Text Text Not NULL,
 
-                    Foreign Key (User_ID) References Users(ID),
+                    Foreign Key (User_ID) References Users(ID) ON DELETE CASCADE,
                     Primary Key(User_ID, Query_Time)
                 );
             """)
 
             cur.execute("""
-                Create Table If Not Exists Retrieved_Docs (
+                Create Table If Not Exists public.Retrieved_Docs (
                     User_ID Int Not NULL,
                     Query_Time Timestamp Not NULL,
                     Doc_ID Int Not NULL,
@@ -69,7 +74,7 @@ def initialize_db():
             """)
 
             cur.execute("""
-                Create Table If Not Exists Chunk_Embeddings (
+                Create Table If Not Exists public.Chunk_Embeddings (
                     ID Serial Primary Key,
                     Document_ID Int Not NULL,
                     text Text NOT NULL,
@@ -77,7 +82,7 @@ def initialize_db():
                     embedding_qa vector(384),
                     embedding_mpnet vector(768),
 
-                    Foreign Key (Document_ID) References Document(ID)
+                    Foreign Key (Document_ID) References Document(ID) ON DELETE CASCADE
                 );
             """)
 
@@ -125,7 +130,7 @@ def check_login(user_name, pwd):
     with conn.cursor() as cur:
 
         cur.execute("""
-            SELECT User_Role, User_Name FROM Users
+            SELECT User_Role, User_Name, ID FROM Users
             WHERE User_Name = %s and User_Password = %s;
         """, [user_name, pwd])
 
@@ -143,7 +148,7 @@ def get_users(admin):
 
         try:
             cur.execute("""
-                SELECT User_Role from Users WHERE User_Name = %s;
+                SELECT User_Role FROM Users WHERE User_Name = %s;
             """, [admin])
 
             role = cur.fetchone()
@@ -170,7 +175,7 @@ def edit_user(admin, new_info):
 
         try:
             cur.execute("""
-                SELECT User_Role from Users WHERE User_Name = %s;
+                SELECT User_Role FROM Users WHERE ID = %s;
             """, [admin])
 
             role = cur.fetchone()
@@ -215,36 +220,132 @@ def add_document(curator, document_name):
     with conn.cursor() as cur:
         try:
             cur.execute("""
-                SELECT User_Role from Users WHERE User_Name = %s;
+                SELECT User_Role FROM Users WHERE ID = %s;
             """, [curator])
 
+            curator_info = cur.fetchone()
 
-            role = cur.fetchone()
-            if role[0] != "Curator":
+            if curator_info[0] != "Curator":
                 print("You do not have permission to perform this action.")
                 return False
 
             file_type = os.path.splitext(document_name)[1].lower()
             if file_type == ".jsonl":
                 chunks = chunk.load_jsonl_file(document_name)
-                pass
             elif file_type == ".txt":
                 chunks = chunk.load_txt_file(document_name)
-                pass
             else:
                 print("Unsupported document type (jsonl, txt only). Please try again.")
                 return
             
-            embeddings = embedding.create_embedding(chunks)
+            first_chunk = next(chunks)
+            chunks = chain([first_chunk], chunks)
             
             cur.execute("""
                 INSERT INTO Document (Title, Doc_Type, Source, Added_By) 
-                VALUES (%s, %s, %s, %s);
-            """, [document_name, file_type[1:], ])
+                VALUES (%s, %s, %s, %s)
+                RETURNING ID;
+            """, [document_name, file_type[1:], "user", curator])
+
+            new_id = cur.fetchone()[0]
+
+            for c in chunks:
+                e = embedding.create_embedding(c)
+                cur.execute("""
+                    INSERT INTO Chunk_Embeddings (Document_ID, Chunk_Text, Embedding_Mini, Embedding_QA, Embedding_MPNET)
+                    VALUES (%s, %s, %s, %s, %s);
+                """, [new_id, c, e["mini"], e["qa"], e["mpnet"]])
+
+            cur.execute("""
+                UPDATE Document
+                SET Processed = True
+                WHERE ID = %s;
+            """, [new_id])
+
+            conn.commit()
             return True
+        
+        except StopIteration:
+            print("Empty file. Document not added.")
+            return False
+        except Exception as e:
+            conn.rollback()
+            print("Something went wrong. " + str(e))
+            return False
+
+def retrieve_all_documents():
+    with conn.cursor() as cur:
+        try:
+            cur.execute("""
+                SELECT Title, Doc_Type, Added_By 
+                FROM Document 
+                ORDER BY ID;
+            """)
+
+            docs = cur.fetchall()
+            return docs
 
         except Exception as e:
-            return False
+            conn.rollback()
+            print("Something went wrong. " + str(e))
+            return None
         
+def retrieve_own_documents(user):
 
+    with conn.cursor() as cur:
+        try:
+            cur.execute("""
+                SELECT Title, Doc_Type, Added_By 
+                FROM Document 
+                WHERE Added_By = %s
+                ORDER BY ID;
+            """, [user])
+
+            return cur.fetchall()
         
+        except Exception as e:
+            conn.rollback()
+            print("Something went wrong. " + str(e))
+            return None
+
+def remove_document(curator, target_doc):
+    
+    with conn.cursor() as cur:
+
+        try:
+            cur.execute("""
+                SELECT User_Role FROM Users WHERE ID = %s;
+            """, [curator])
+
+            curator_info = cur.fetchone()
+
+            cur.execute("""
+                SELECT Added_By FROM Document WHERE ID = %s;
+            """, [target_doc])
+
+            doc_info = cur.fetchone()
+
+            if curator_info[0] != "Curator":
+                print("You do not have permission to perform this action.")
+                return False
+            
+            elif not doc_info:
+                print("Document not found.")
+                return False
+            
+            elif doc_info[0] != curator and curator_info[0] != "Admin":
+                print("You do not have permission to delete this document.")
+                return False
+            
+            cur.execute("""
+                DELETE FROM Document
+                WHERE ID = %s;
+            """, [target_doc])
+
+            conn.commit()
+            return True
+        
+        except Exception:
+            print("Something went wrong. Please try again.")
+            return False
+
