@@ -87,6 +87,12 @@ def initialize_db():
                 );
             """)
 
+            cur.execute("""
+                INSERT INTO Users (User_Role, User_Name, Email, User_Password)
+                VALUES ('Admin', 'admin', 'admin@gmail.com', 'admin')
+                ON CONFLICT DO NOTHING;
+            """)
+
             conn.commit()
 
             return True
