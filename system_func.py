@@ -13,7 +13,7 @@ def startup_menu():
     
     while True:
         print("=====================================")
-        print("         WELCOME TO QA SYSTEM        ")
+        print("       WELCOME TO FANDOM SEARCH      ")
         print("=====================================")
         print("1. Login")
         print("2. Register")
