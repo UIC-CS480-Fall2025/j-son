@@ -1,6 +1,8 @@
 # Fandom Page Searcher
 
-This is a Query Answering System that takes webpages scraped from several popular Fandom wikis, chunk each page's textual content and embeds them as vectors. These vectors are then stored inside of a PostgreSQL vector database for future querying.
+This is a Query Answering System that takes textual content from documents and embeds them as vectors. These vectors are then stored inside of a PostgreSQL vector database for future querying.
+
+The system itself is a CLI program where users login to make queries and upload documents to the database. Two types of documents are supported by the system: `jsonl` and `txt` files. Each `json` object in `jsonl` documents should have a `text` field that contains the textual content.
 
 ## Data Source
 
@@ -21,25 +23,27 @@ This data was sourced from <https://www.kaggle.com/datasets/jonathanluo101/fando
     - This will create an interactive psql shell connected to a database called `text_embeddings`
 5. Add the vector extension to the database: `CREATE EXTENSION IF NOT EXISTS vector;`
     - Verify with `\dx`, vector should be listed
-6. Create a table `chunks` to store the chunked text
-    - `CREATE TABLE IF NOT EXISTS chunks (
-                id SERIAL PRIMARY KEY,
-                url TEXT NOT NULL,
-                chunk_index INTEGER NOT NULL,
-                text TEXT NOT NULL,
-                embedding VECTOR(384)
-        );`
-7. Clone this repository and navigate to its directory
+6. Clone this repository and navigate to its directory
     - Alongside with the code, this repository also includes a sample of the data inside of `archive/` for demoing purposes
-8. Install the necessary dependencies with `pip install -r requirements.txt`
-9. Inside of the repo directory, create a `.env` file to store your postgres password formatted as such:
+7. Install the necessary dependencies with `pip install -r requirements.txt`
+8. Inside of the repo directory, create a `.env` file to store your postgres password formatted as such:
     `DB_PASSWORD = <password>`
 
 ## Running the Project
 
-1. First chunk the data by executing `chunk.py` with `python chunk.py`
-    - All of the chunks should now be stored inside of the `chunks` table within the database
-2. Then, embed all of the chunks by executing `embedding.py` with `python embedding.py`
-    - After execution, all of the embeddings should be stored inside of the `chunks` table, under the column `embedding`, with their corresponding text chunk.
-    - This process might take a long time due to the sheer quantity of chunks. If the purpose is to quickly demo the project, remove all but a few of the jsonl files from `archive/`, ideally the keeping the smaller files.
-3. To finally begin querying, simply run `query.py` with `python query.py`
+Simply run the `main.py` file.
+You will be greeted with a start up menu where you can login or register a new user.
+By default, there will be an user `admin` in the system. To login to that account, both
+the username and password are `admin`.
+
+Otherwise, register a new End User to login.
+
+There are 3 types of Users:
+
+- End Users: Able to make queries. All registered users start off as an End User
+- Curators: Special End Users that are able to upload documents and remove self uploaded documents
+- Admins: Users with the highest level of access. Able to edit all other user information.
+
+Once logged in, you will be able to perform certain actions according to your user role.
+
+As a note, the system will start off with no documents stored. A curator or admin must add at least one document first before querying can provide any results.
