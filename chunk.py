@@ -71,7 +71,6 @@ def chunk_dataset(folder_path, size=150, overlap=50):
     return all_chunks
 
 def chunk_jsonl_file(file_path, size=150, overlap=50):
-
     for text in load_single_jsonl(file_path):
         if not text:
             continue
@@ -85,7 +84,7 @@ def chunk_txt_file(file_path, size=150, overlap=50):
 
     buffer = []
 
-    for text in load_single_jsonl(file_path):
+    for text in load_single_txt(file_path):
         if not text:
             continue
 
