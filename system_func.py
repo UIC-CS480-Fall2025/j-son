@@ -6,8 +6,11 @@ MENU = ""
 USER_ACTIONS = []
 
 def startup_menu():
+    if not db.initialize_db():
+        exit(1)
+
     global USER_INFO
-    db.initialize_db()
+    
     while True:
         print("=====================================")
         print("         WELCOME TO QA SYSTEM        ")
