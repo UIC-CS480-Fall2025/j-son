@@ -1,16 +1,13 @@
 import database as db
 import re
 
-USER_INFO = {
-    "Role" : "",
-    "User_Name" : "",
-    "ID" : -1
-}
-
+USER_INFO = {}
 MENU = ""
 USER_ACTIONS = []
 
 def startup_menu():
+    global USER_INFO
+
     while True:
         print("=====================================")
         print("         WELCOME TO QA SYSTEM        ")
@@ -19,16 +16,27 @@ def startup_menu():
         print("2. Register")
         print("3. Exit")
         print("=====================================")
-
-        choice = input("Select an option (1-3): ")
+        choice = input("Select an option (1 - 3): ")
 
         if choice == "1":
-            return login()
+            result = login()
+
+            if not result:
+                return {}
+            
+            USER_INFO["Role"] = result[0]
+            USER_INFO["User_Name"] = result[1]
+            USER_INFO["ID"] = result[2]
+
+            return USER_ACTIONS
+
         elif choice == "2":
-            return "register"
+            register()
         elif choice == "3":
             print("Exiting program...")
-            return "exit"
+            exit(1)
+        else:
+            print("Invalid option. Please try again.")
 
 def login():
     print("=====================================")
@@ -47,6 +55,9 @@ def login():
         print("\nAttempting login...\n")
         result = db.check_login(username.strip(), password.strip())
         if result:
+            print("=====================================")
+            print(f"           WELCOME {username.strip()} ")
+            print("=====================================")
             return result
 
 def register():
@@ -61,7 +72,7 @@ def register():
             if not user_name:
                 print("Field cannot be empty. Try again.")
             elif user_name.strip().lower() == "back":
-                return
+                return None
             elif len(user_name) > 20:
                 print("Username too long.")
             else:
@@ -75,7 +86,7 @@ def register():
                 print("Field cannot be empty. Try again.")
 
             elif email.strip().lower() == "back":
-                return
+                return None
 
             elif not re.match(email_pattern, email):
                 print("Invalid email.")
@@ -92,16 +103,15 @@ def register():
             if not password:
                 print("Field cannot be empty. Try again.")
             elif password.strip().lower() == "back":
-                return
+                return None
             elif len(password) > 15:
                 print("Password too long.")
             else:
                 break
 
         if db.add_user(user_name.strip(), email.strip(), password.strip(), "EndUser"):
-            return
+            return None
         
-
 def query():
     global USER_INFO
     print("=====================================")
@@ -155,7 +165,7 @@ def upload():
 
     while True:
         while True:
-            file_path = input("Enter the path to the document (Enter \"back\" to return):")
+            file_path = input("Enter the path to the document (Enter \"back\" to return): ")
 
             if not file_path:
                 print("Field cannot be empty. Try again.")
@@ -175,7 +185,7 @@ def get_documents():
 
     results = db.retrieve_all_documents()
 
-    for i, (title, doc_type, added_by) in enumerate(results, start=1):
+    for i, (_, title, doc_type, added_by) in enumerate(results, start=1):
         print(f"{i}.\n - Title: {title}\n - Type: {doc_type}\n - Added By: {added_by}\n")
 
 def get_own_documents():
@@ -185,8 +195,7 @@ def get_own_documents():
     print("=====================================")
 
     results = db.retrieve_user_documents(USER_INFO["ID"])
-
-    for i, (title, doc_type) in enumerate(results, start=1):
+    for i, (_, title, doc_type) in enumerate(results, start=1):
         print(f"{i}.\n - Title: {title}\n - Type: {doc_type}\n")
 
 def remove():
@@ -199,13 +208,13 @@ def remove():
         print("Your Documents:")
         docs = db.retrieve_user_documents(USER_INFO["ID"])
 
-        for i, (title, doc_type) in enumerate(docs, start=1):
+        for i, (_, title, doc_type) in enumerate(docs, start=1):
             print(f"{i}.\n - Title: {title}\n - Type: {doc_type}\n")
     elif USER_INFO["Role"] == "Admin":
         print("All Documents:")
         docs = db.retrieve_all_documents()
 
-        for i, (title, doc_type, added_by) in enumerate(docs, start=1):
+        for i, (_, title, doc_type, added_by) in enumerate(docs, start=1):
             print(f"{i}.\n - Title: {title}\n - Type: {doc_type}\n - Added By: {added_by}\n")
 
     while True:
@@ -223,13 +232,14 @@ def remove():
                     if choice < 1 or choice > len(docs):
                         print("Invalid option. Try again.")
                         continue
-
+                    
+                    target_id = docs[choice - 1][0]
                     break   
 
                 except ValueError:
                     print("Please enter a valid number.")
 
-        if db.remove_document(USER_INFO["ID"], choice):
+        if db.remove_document(USER_INFO["ID"], target_id):
             return
 
 def get_users():
@@ -240,8 +250,8 @@ def get_users():
 
     users = db.get_all_users(USER_INFO["ID"])
 
-    for (id, user_role, user_name, email, user_password) in users:
-        print(f"Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Password: {user_password}\n - Role: {user_role}")
+    for i, (id, user_role, user_name, email, user_password) in enumerate(users, start=1):
+        print(f"{i}.\n - Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Password: {user_password}\n - Role: {user_role}")
         print("-------------------------------")
 
 def edit_user():
@@ -252,8 +262,8 @@ def edit_user():
 
     all_users = db.get_all_users(USER_INFO["ID"])
 
-    for (id, user_role, user_name, email, user_password) in all_users:
-        print(f"Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Password: {user_password}\n - Role: {user_role}")
+    for i, (id, user_role, user_name, email, user_password) in enumerate(all_users, start=1):
+        print(f"{i}.\n - Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Password: {user_password}\n - Role: {user_role}")
         print("-------------------------------")
 
     while True:
@@ -288,12 +298,12 @@ def edit_user():
     print("-------------------------------------")
     print("               EDITING               ")
     print("-------------------------------------")
-    print(f"Username: {target_user_info["User_Name"]}\n - User ID: {target_user_info["ID"]}\n - Email: {target_user_info["Email"]}\n - Password: {target_user_info["User_Password"]}\n - Role: {target_user_info["User_Role"]}")
+    print(f"Username: {target_user_info['User_Name']}\n - User ID: {target_user_info['ID']}\n - Email: {target_user_info['Email']}\n - Password: {target_user_info['User_Password']}\n - Role: {target_user_info['User_Role']}")
     print("-------------------------------")
     print("1. Username\n2. Email\n3. Password\n4. Role")
 
     to_print = ["Username", "Email", "Password", "Role"]
-    options = ["User_Name", "Email", "Password", "User_Role"]
+    options = ["User_Name", "Email", "User_Password", "User_Role"]
     while True:
 
         to_edit = input("Pick one of the above to edit (1 - 4)\n(Enter \"back\" to return): ")
@@ -339,8 +349,8 @@ def delete_user():
 
     all_users = db.get_all_users(USER_INFO["ID"])
 
-    for (id, user_role, user_name, email, _) in all_users:
-        print(f"Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Role: {user_role}")
+    for i, (id, user_role, user_name, email, _) in enumerate(all_users, start=1):
+        print(f"{i}.\n - Username: {user_name}\n - User ID: {id}\n - Email: {email}\n - Role: {user_role}")
         print("-------------------------------")
 
     while True:
@@ -367,7 +377,6 @@ def delete_user():
         if db.delete_user(USER_INFO["ID"], target_user):
             return
 
-
 def define_menu():
     global USER_INFO
     global MENU
@@ -378,11 +387,11 @@ def define_menu():
             MENU = "1. Make Query\n2. Get All Documents\n3. Logout"
             USER_ACTIONS = [query, get_documents, logout]
         case "Curator":
-            MENU = "1. Upload Document\n2. Get All Documents\n3. Get Self-Uploaded Documents\n4. Delete Document\n5. Logout"
-            USER_ACTIONS = [upload, get_documents, get_own_documents, remove, logout]
+            MENU = "1. Make Query\n2. Upload Document\n3. Get All Documents\n4. Get Self-Uploaded Documents\n5. Delete Document\n6. Logout"
+            USER_ACTIONS = [query, upload, get_documents, get_own_documents, remove, logout]
         case "Admin":
-            MENU = "1. Get All Users\n2. Edit User\n3. Delete User\n4. Logout"
-            USER_ACTIONS = [get_users, edit_user, delete_user, logout]
+            MENU = "1. Make Query\n2. Upload Document\n3. Get All Documents\n4. Get Self-Uploaded Documents\n5. Delete Document\n6. Get All Users\n7. Edit User\n8. Delete User\n9. Logout"
+            USER_ACTIONS = [query, upload, get_documents, get_own_documents, remove, get_users, edit_user, delete_user, logout]
 
 def menu():
     global MENU
@@ -393,9 +402,12 @@ def menu():
     print(MENU)
 
     while True:
-        choice = input(f"Action (1 - {len(USER_ACTIONS)}): ")
+        try:
+            choice = int(input(f"Action (1 - {len(USER_ACTIONS)}): "))
 
-        if choice < 1 or choice > len(USER_ACTIONS):
-            print("Invalid option. Try again.")
-        else:
-            return USER_ACTIONS[choice - 1]()
+            if choice < 1 or choice > len(USER_ACTIONS):
+                print("Invalid option. Try again.")
+            else:
+                return USER_ACTIONS[choice - 1]()
+        except ValueError:
+            print("Please enter a valid number.")
