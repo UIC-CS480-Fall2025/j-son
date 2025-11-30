@@ -168,7 +168,7 @@ def upload():
 
     while True:
         while True:
-            file_path = input("Enter the path to the document (Enter \"back\" to return): ")
+            file_path = input("Enter the path to the document\n(Enter \"back\" to return): ")
 
             if not file_path:
                 print("Field cannot be empty. Try again.")
@@ -222,7 +222,7 @@ def remove():
 
     while True:
         while True:
-            choice = input(f"Pick Document to Remove (1 - {len(docs)}) (Enter \"back\" to return): ")
+            choice = input(f"Pick Document to Remove (1 - {len(docs)})\n(Enter \"back\" to return): ")
 
             if not choice:
                 print("Field cannot be empty. Try again.")
