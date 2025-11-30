@@ -112,7 +112,7 @@ def add_user(user_name, email, pwd, role):
             print("A user with this username or email already exists. Please try again.")
             return False
         except psycopg2.errors.CheckViolation as e:
-            print("Invalid password or email: " + e.pgerror + "\nPlease try again.")
+            print("Invalid email: " + e.pgerror + "\nPlease try again.")
             return False
         except psycopg2.errors.StringDataRightTruncation as e:
             conn.rollback()
@@ -139,17 +139,48 @@ def check_login(user_name, pwd):
 
         if not result:
             print("Invalid user name or password. Please try again")
-            return ("", "")
+            return ()
         
         return result
     
-def get_users(admin):
+def get_user(admin, target_user):
+    with conn.cursor() as cur:
+
+        try:
+            cur.execute("""
+                SELECT User_Role FROM Users WHERE ID = %s;
+            """, [admin])
+
+            role = cur.fetchone()
+
+            if role[0] != "Admin":
+                print("You do not have permission to perform this action.")
+                return []
+            
+            cur.execute("""
+                SELECT * FROM Users
+                WHERE ID = %s;
+            """, [target_user])
+
+            result = cur.fetchone()
+
+            if not result:
+                print("User with not found.")
+                return ()
+            
+            return result
+            
+        except Exception as e:
+            print("Something went wrong.\n" + str(e) + "\nPlease try again.")
+            return ()
+
+def get_all_users(admin):
 
     with conn.cursor() as cur:
 
         try:
             cur.execute("""
-                SELECT User_Role FROM Users WHERE User_Name = %s;
+                SELECT User_Role FROM Users WHERE ID = %s;
             """, [admin])
 
             role = cur.fetchone()
@@ -254,7 +285,7 @@ def delete_user(admin, target_user):
             print("Something went wrong.\n" + str(e) + "\nPlease try again.")
             return False
 
-def add_document(curator, document_name):
+def add_document(curator, file_path):
 
     with conn.cursor() as cur:
         try:
@@ -268,11 +299,11 @@ def add_document(curator, document_name):
                 print("You do not have permission to perform this action.")
                 return False
 
-            file_type = os.path.splitext(document_name)[1].lower()
+            file_type = os.path.splitext(file_path)[1].lower()
             if file_type == ".jsonl":
-                chunks = chunk.load_jsonl_file(document_name)
+                chunks = chunk.load_jsonl_file(file_path)
             elif file_type == ".txt":
-                chunks = chunk.load_txt_file(document_name)
+                chunks = chunk.load_txt_file(file_path)
             else:
                 print("Unsupported document type (jsonl, txt only). Please try again.")
                 return
@@ -280,11 +311,12 @@ def add_document(curator, document_name):
             first_chunk = next(chunks)
             chunks = chain([first_chunk], chunks)
             
+            file_name = os.path.basename(file_path)
             cur.execute("""
                 INSERT INTO Document (Title, Doc_Type, Source, Added_By) 
                 VALUES (%s, %s, %s, %s)
                 RETURNING ID;
-            """, [document_name, file_type[1:], "user", curator])
+            """, [file_name, file_type[1:], "user", curator])
 
             new_id = cur.fetchone()[0]
 
@@ -302,6 +334,7 @@ def add_document(curator, document_name):
             """, [new_id])
 
             conn.commit()
+            print("Added " + file_name + " to database.")
             return True
         
         except StopIteration:
@@ -329,12 +362,12 @@ def retrieve_all_documents():
             print("Something went wrong. " + str(e))
             return None
         
-def retrieve_own_documents(user):
+def retrieve_user_documents(user):
 
     with conn.cursor() as cur:
         try:
             cur.execute("""
-                SELECT Title, Doc_Type, Added_By 
+                SELECT Title, Doc_Type
                 FROM Document 
                 WHERE Added_By = %s
                 ORDER BY ID;
@@ -385,6 +418,7 @@ def remove_document(curator, target_doc):
             return True
         
         except Exception:
+            conn.rollback()
             print("Something went wrong. Please try again.")
             return False
 
@@ -436,6 +470,9 @@ def make_query(user, query, k):
         except Exception as e:
             conn.rollback()
             print("Something went wrong. " + str(e) + "\n Please try again.")
-            return []
+            return [], []
     
 
+def close_db():
+    conn.commit()
+    conn.close()
