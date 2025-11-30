@@ -69,7 +69,7 @@ def initialize_db():
                     Doc_ID INT NOT NULL,
                     
                     FOREIGN KEY (User_ID, Query_Time) REFERENCES QueryLog(User_ID, Query_Time) ON DELETE CASCADE,
-                    FOREIGN KEY (Doc_ID) REFERENCES Document(ID),
+                    FOREIGN KEY (Doc_ID) REFERENCES Document(ID) ON DELETE CASCADE, 
                     PRIMARY KEY(User_ID, Query_Time, Doc_ID)
                 );
             """)
