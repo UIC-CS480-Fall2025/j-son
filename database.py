@@ -47,7 +47,7 @@ def initialize_db():
                     Processed BOOLEAN DEFAULT False NOT NULL, 
                     Added_By INT NOT NULL,
 
-                    Foreign Key (Added_By) References Users(ID) ON DELETE CASCADE
+                    Foreign Key (Added_By) REFERENCES Users(ID) ON DELETE CASCADE
                 );
             """)
 
@@ -68,7 +68,7 @@ def initialize_db():
                     Query_Time TIMESTAMP NOT NULL,
                     Doc_ID INT NOT NULL,
                     
-                    FOREIGN KEY (User_ID, Query_Time) REFERENCES QueryLog(User_ID, Query_Time),
+                    FOREIGN KEY (User_ID, Query_Time) REFERENCES QueryLog(User_ID, Query_Time) ON DELETE CASCADE,
                     FOREIGN KEY (Doc_ID) REFERENCES Document(ID),
                     PRIMARY KEY(User_ID, Query_Time, Doc_ID)
                 );
@@ -200,7 +200,6 @@ def get_all_users(admin):
             print("Something went wrong.\n" + str(e) + "\nPlease try again.")
             return []
 
-
 def edit_user(admin, new_info):
 
     with conn.cursor() as cur:
@@ -295,15 +294,15 @@ def add_document(curator, file_path):
 
             curator_info = cur.fetchone()
 
-            if curator_info[0] != "Curator":
+            if curator_info[0] == "EndUser":
                 print("You do not have permission to perform this action.")
                 return False
 
             file_type = os.path.splitext(file_path)[1].lower()
             if file_type == ".jsonl":
-                chunks = chunk.load_jsonl_file(file_path)
+                chunks = chunk.chunk_jsonl_file(file_path)
             elif file_type == ".txt":
-                chunks = chunk.load_txt_file(file_path)
+                chunks = chunk.chunk_txt_file(file_path)
             else:
                 print("Unsupported document type (jsonl, txt only). Please try again.")
                 return
@@ -313,11 +312,10 @@ def add_document(curator, file_path):
             
             file_name = os.path.basename(file_path)
             cur.execute("""
-                INSERT INTO Document (Title, Doc_Type, Source, Added_By) 
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO Document (Title, Doc_Type, Added_By) 
+                VALUES (%s, %s, %s)
                 RETURNING ID;
-            """, [file_name, file_type[1:], "user", curator])
-
+            """, [file_name, file_type[1:], curator])
             new_id = cur.fetchone()[0]
 
             for c in chunks:
@@ -349,9 +347,9 @@ def retrieve_all_documents():
     with conn.cursor() as cur:
         try:
             cur.execute("""
-                SELECT Title, Doc_Type, Added_By 
-                FROM Document 
-                ORDER BY ID;
+                SELECT Document.ID, Title, Doc_Type, User_Name
+                FROM Document JOIN Users ON Added_By = Users.ID
+                ORDER BY Document.ID;
             """)
 
             docs = cur.fetchall()
@@ -367,7 +365,7 @@ def retrieve_user_documents(user):
     with conn.cursor() as cur:
         try:
             cur.execute("""
-                SELECT Title, Doc_Type
+                SELECT ID, Title, Doc_Type
                 FROM Document 
                 WHERE Added_By = %s
                 ORDER BY ID;
@@ -397,7 +395,7 @@ def remove_document(curator, target_doc):
 
             doc_info = cur.fetchone()
 
-            if curator_info[0] != "Curator":
+            if curator_info[0] == "EndUser":
                 print("You do not have permission to perform this action.")
                 return False
             
@@ -450,11 +448,11 @@ def make_query(user, query, k):
 
             top_k = cur.fetchall()
 
-            retrieved_docs_ids = []
+            retrieved_docs_ids = set()
             retrieved_doc_titles = []
             retrieved_chunks = []
             for r in top_k:
-                retrieved_docs_ids.append(r[0])
+                retrieved_docs_ids.add(r[0])
                 retrieved_doc_titles.append(r[1])
                 retrieved_chunks.append(r[2])
 
@@ -472,7 +470,6 @@ def make_query(user, query, k):
             print("Something went wrong. " + str(e) + "\n Please try again.")
             return [], []
     
-
 def close_db():
     conn.commit()
     conn.close()
