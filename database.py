@@ -39,7 +39,7 @@ def initialize_db():
             """)
 
             cur.execute("""
-                CREATE TABLE IF NOT EXIST public.Document (
+                CREATE TABLE IF NOT EXISTS public.Document (
                     ID SERIAL NOT NULL PRIMARY KEY,
                     Title varchar(80) NOT NULL,
                     Doc_Type varchar(20) NOT NULL,
@@ -52,18 +52,18 @@ def initialize_db():
             """)
 
             cur.execute("""
-                CREATE TABLE IF NOT EXIST public.QueryLog (
+                CREATE TABLE IF NOT EXISTS public.QueryLog (
                     User_ID INT NOT NULL,
                     Query_Time TIMESTAMP DEFAULT Now() NOT NULL,
                     Query_Text TEXT NOT NULL,
 
-                    FOREGIN KEY (User_ID) REFERENCES Users(ID) ON DELETE CASCADE,
+                    FOREIGN KEY (User_ID) REFERENCES Users(ID) ON DELETE CASCADE,
                     PRIMARY KEY(User_ID, Query_Time)
                 );
             """)
 
             cur.execute("""
-                CREATE TABLE IF NOT EXIST public.Retrieved_Docs (
+                CREATE TABLE IF NOT EXISTS public.Retrieved_Docs (
                     User_ID INT NOT NULL,
                     Query_Time TIMESTAMP NOT NULL,
                     Doc_ID INT NOT NULL,
@@ -75,7 +75,7 @@ def initialize_db():
             """)
 
             cur.execute("""
-                CREATE TABLE IF NOT EXIST public.Chunk_Embeddings (
+                CREATE TABLE IF NOT EXISTS public.Chunk_Embeddings (
                     ID SERIAL PRIMARY KEY,
                     Document_ID INT NOT NULL,
                     Chunk_Text TEXT NOT NULL,
