@@ -19,24 +19,25 @@ def startup_menu():
         print("2. Register")
         print("3. Exit")
         print("=====================================")
-        choice = input("Select an option (1 - 3): ")
+        choice = input("Select an option (1 - 3): ").strip()
 
         if choice == "1":
             result = login()
 
             if not result:
-                return {}
+                continue
             
             USER_INFO["Role"] = result[0]
             USER_INFO["User_Name"] = result[1]
             USER_INFO["ID"] = result[2]
 
-            return USER_ACTIONS
+            return USER_INFO
 
         elif choice == "2":
             register()
         elif choice == "3":
             print("Exiting program...")
+            db.close_db()
             exit(1)
         else:
             print("Invalid option. Please try again.")
@@ -47,11 +48,11 @@ def login():
     print("=====================================")
 
     while True:
-        username = input("Enter Username: ")
+        username = input("Enter Username\n(Enter \"back\" to return): ")
         if username.strip().lower() == "back":
             return ()
         
-        password = input("Enter Password: ")
+        password = input("Enter Password\n(Enter \"back\" to return): ")
         if password.strip().lower() == "back":
             return ()
 
@@ -70,7 +71,7 @@ def register():
 
     while True:
         while True:
-            user_name = input("Username (max: 20 characters): ")
+            user_name = input("Username (max: 20 characters)\n(Enter \"back\" to return): ")
 
             if not user_name:
                 print("Field cannot be empty. Try again.")
@@ -83,7 +84,7 @@ def register():
         
         email_pattern =  r"^[^@]+@[^@]+\.[^@]+$"
         while True:
-            email = input("Email: ")
+            email = input("Email\n(Enter \"back\" to return): ")
 
             if not email:
                 print("Field cannot be empty. Try again.")
@@ -101,7 +102,7 @@ def register():
                 break
 
         while True:
-            password = input("Password: ")
+            password = input("Password\n(Enter \"back\" to return): ")
 
             if not password:
                 print("Field cannot be empty. Try again.")
@@ -156,9 +157,14 @@ def query():
     print("=====================================")
 
 def logout():
-    db.close_db()
     print("Logging out....")
-    exit(1)
+    
+    global USER_INFO
+    global USER_ACTIONS
+    global MENU
+    USER_INFO = {}
+    USER_ACTIONS = []
+    MENU = ""
 
 def upload():
     global USER_INFO
